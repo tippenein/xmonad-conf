@@ -28,6 +28,8 @@ stdenv.mkDerivation {
     # Make stack happy:
     export GPG_TTY=`tty`
 
-    # xmodmap ~/.Xmodmap
+    setxkbmap -option caps:escape
+    xmodmap -q ~/.Xmodmap
+    feh --bg-center ~/Desktop/background.jpg
   '';
 }

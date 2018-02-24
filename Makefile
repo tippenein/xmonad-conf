@@ -1,6 +1,5 @@
 all:
-	xmonad --recompile
-	xmonad --restart
+	xmonad --recompile && xmonad --restart
 
 clean:
-	rm *.o *.hi 
+	rm *.o *.hi
