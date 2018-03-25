@@ -72,7 +72,7 @@ myManageHook = (composeAll . concat $
       myBiz     = ["Chromium-browser","chromium-browser"]
       myChat    = ["Pidgin","Buddy List", "hipchat", "HipChat", "Slack"]
       myOther   = ["Evince","xchm","libreoffice-writer","libreoffice-startcenter", "Signal"]
-      myFloats  = ["Slack Call Minipanel", "keepass2","feh","Gimp","Xmessage","XFontSel","Nm-connection-editor", "qbittorrent", "Steam", "pavucontrol"]
+      myFloats  = ["Slack Call Minipanel", "keepass2","feh", "PatchWindow", "PdWindow", "Gimp","Xmessage","XFontSel","Nm-connection-editor", "qbittorrent", "Steam", "pavucontrol"]
 
       -- resources
       myIgnores = ["desktop","desktop_window","stalone-tray","notify-osd","stalonetray","trayer", "jetbrains-studio"]
@@ -122,6 +122,9 @@ main = do
       -- normal screenshot
       , ((0, xK_Print         ) , spawn myFullScreenShot)
       , ((modMask, xK_p)        , spawn "dmenu_run")
+      -- backtick display toggle
+      -- , ((0x60, "grave"))        , spawn "displayon")
+      -- , ((0x60, ))       , spawn "displayoff")
       -- select screenshot
       , (modCtrl xK_Print       , spawn mySelectScreenShot)
       , (modCtrl xK_g           , spawn myScreenGif)

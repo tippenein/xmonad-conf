@@ -25,7 +25,7 @@ xcompmgr -n &
 
 setxkbmap -option caps:escape
 xscreensaver -no-splash &
-feh --bg-fill /home/tippenein/pics/3d_water_wallpapers-normal.jpg
+feh --bg-center /home/tippenein/Desktop/background.jpg
 gnome-keyring-daemon --start --components=gpg,pkcs11,secrets,ssh
 xmodmap ~/.Xmodmap
 
