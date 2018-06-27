@@ -93,6 +93,9 @@ myStartupHook = do
   spawnOnce "pasystray"
   spawnOnce "fdpowermon"
   spawnOnce myTerminal
+  spawnOnce "firefox"
+  spawnOnce "emacs"
+  spawnOnce "fluxgui"
 
 main = do
     xmproc <- spawnPipe "/usr/bin/xmobar ~/.xmonad/xmobar.hs"
