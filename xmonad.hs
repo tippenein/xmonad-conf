@@ -3,35 +3,29 @@
 import           XMonad
 
 import           System.IO
+import           System.Posix.Unistd
 
 import           XMonad.Actions.CycleWS
 import           XMonad.Config.Gnome
-import           XMonad.Hooks.ManageDocks
-import           XMonad.Hooks.SetWMName
 import           XMonad.Util.EZConfig       (additionalKeys)
 import           XMonad.Util.Run
-
--- Hooks
+import           XMonad.Util.SpawnOnce
 import           XMonad.Hooks.DynamicLog
 import           XMonad.Hooks.EwmhDesktops
 import           XMonad.Hooks.ManageDocks
+import           XMonad.Hooks.SetWMName
 import           XMonad.Hooks.ManageHelpers
-import           XMonad.Util.SpawnOnce
-
 import           XMonad.Layout.NoBorders    (noBorders, smartBorders)
 import           XMonad.Layout.PerWorkspace (onWorkspace, onWorkspaces)
 import           XMonad.Layout.SimpleFloat
-
-import           Data.List                  (intercalate)
-import qualified Data.Map                   as M
-import qualified XMonad.StackSet            as W
+import           XMonad.StackSet            (focusDown)
 -------------------
 -- Layouts --------
 -------------------
 myLayout = avoidStruts $ layoutHook def
 
 -------------------
--- Worspace names -
+-- Workspace names -
 -------------------
 myWorkspaces = [ "1:shell"
                , "2:emacs"
@@ -71,83 +65,116 @@ myManageHook = (composeAll . concat $
       myWeb     = ["Firefox", "firefox-trunk"]
       myBiz     = ["Chromium-browser","chromium-browser"]
       myChat    = ["Pidgin","Buddy List", "hipchat", "HipChat", "Slack"]
-      myOther   = ["Evince","xchm","libreoffice-writer","libreoffice-startcenter", "Signal"]
-      myFloats  = ["Slack Call Minipanel", "keepass2","feh", "PatchWindow", "PdWindow", "Gimp","Xmessage","XFontSel","Nm-connection-editor", "qbittorrent", "Steam", "pavucontrol"]
+      myOther   = ["Evince","xchm","libreoffice-writer","libreoffice-startcenter", "Signal", "Thunderbird"]
+      myFloats  = [ "Discord"
+                  , "Slack Call Minipanel"
+                  , "keepass2"
+                  , "keepassx"
+                  , "feh"
+                  , "PatchWindow"
+                  , "PdWindow"
+                  , "Gimp"
+                  , "Xmessage"
+                  , "XFontSel"
+                  , "Nm-connection-editor"
+                  , "qbittorrent"
+                  , "Steam"
+                  , "pavucontrol"
+                  ]
 
       -- resources
-      myIgnores = ["desktop","desktop_window","stalone-tray","notify-osd","stalonetray","trayer", "jetbrains-studio"]
+      myIgnores = ["desktop","desktop_window","stalone-tray","notify-osd","stalonetray","trayer"]
       myNames   = ["bashrun","Google Chrome Options","Chromium Options"]
 
       -- a trick for fullscreen but stil allow focusing of other WSs
       myDoFullFloat :: ManageHook
-      myDoFullFloat = doF W.focusDown <+> doFullFloat
+      myDoFullFloat = doF focusDown <+> doFullFloat
 
 newManageHook = myManageHook <+> manageHook def
 
+myStartupHook :: X ()
 myStartupHook = do
   ewmhDesktopsStartup >> setWMName "LG3D"  --- make java applications work..
   spawnOnce "stalonetray --dockapp-mode simple"
+  -- spawnOnce "setxkbmap -option caps:escape"
+  spawnOnce "feh --bg-scale ~/Desktop/background.jpg"
   spawnOnce "unity-settings-daemon"
   spawnOnce "gnome-settings-daemon"
   spawnOnce "nm-applet"
+  spawnOnce "redshift-gtk"
   spawnOnce "pasystray"
-  spawnOnce "fdpowermon"
   spawnOnce myTerminal
   spawnOnce "firefox"
   spawnOnce "emacs"
-  spawnOnce "fluxgui"
+  spawnOnce "thunderbird"
+  spawnOnce "monitors"
+  spawnOnce "chromium-browser"
+  spawnOnce "fdpowermon"
+
+
+data Host = Desktop
+          | Laptop
+  deriving (Eq, Read, Show)
+
+getHost :: IO Host
+getHost = do
+  hostName <- nodeName `fmap` getSystemID
+  return $ case hostName of
+    "kodukbunwaree" -> Desktop
+    "tippenein"     -> Laptop
+    _               -> Desktop
 
 main = do
-    xmproc <- spawnPipe "/usr/bin/xmobar ~/.xmonad/xmobar.hs"
-    xmonad $ gnomeConfig
-      { borderWidth        = 2
-      , manageHook         = newManageHook
-      , modMask            = myModMask
-      , workspaces         = myWorkspaces
-      , layoutHook         = smartBorders $ myLayout
-      , normalBorderColor  = myNormalBorderColor
-      , focusedBorderColor = myFocusedBorderColor
-      , terminal           = myTerminal
-      , startupHook        = myStartupHook
-      , handleEventHook    = fullscreenEventHook <+> docksEventHook
-      , focusFollowsMouse  = True
-      , logHook = dynamicLogWithPP xmobarPP
-                { ppOutput = hPutStrLn xmproc
-                , ppTitle = xmobarColor "green" "" . shorten 50
-                }
-      }
+  -- look into using hostname as identifier
+  -- https://github.com/byorgey/dotfiles/blob/master/xmonad.hs#L106
+  xmproc <- spawnPipe "/usr/bin/xmobar ~/.xmonad/xmobar.hs"
+  xmonad $ gnomeConfig
+    { borderWidth        = 2
+    , manageHook         = newManageHook
+    , modMask            = myModMask
+    , workspaces         = myWorkspaces
+    , layoutHook         = smartBorders $ myLayout
+    , normalBorderColor  = myNormalBorderColor
+    , focusedBorderColor = myFocusedBorderColor
+    , terminal           = myTerminal
+    , startupHook        = myStartupHook
+    , handleEventHook    = fullscreenEventHook <+> docksEventHook
+    , focusFollowsMouse  = True
+    , logHook = dynamicLogWithPP xmobarPP
+              { ppOutput = hPutStrLn xmproc
+              , ppTitle = xmobarColor "green" "" . shorten 40
+              }
+    }
+
 ----------------
 -- Keybinds ----
 ----------------
-      `additionalKeys`
-      -- screensaver
-      [ (modShift xK_z          , spawn myScreensaver)
-      -- normal screenshot
-      , ((0, xK_Print         ) , spawn myFullScreenShot)
-      , ((modMask, xK_p)        , spawn "dmenu_run")
-      -- backtick display toggle
-      -- , ((0x60, "grave"))        , spawn "displayon")
-      -- , ((0x60, ))       , spawn "displayoff")
-      -- select screenshot
-      , (modCtrl xK_Print       , spawn mySelectScreenShot)
-      , (modCtrl xK_g           , spawn myScreenGif)
-      , (modShift xK_n          , spawn "nm-connection-editor")
-      , (modCtrl  xK_Right      , nextWS)
-      , (modShift xK_Right      , shiftToNext)
-      , (smash xK_o             , spawn "pavucontrol")
-      , (modCtrl  xK_Left       , prevWS)
-      , (modShift xK_Left       , shiftToPrev)
-      , ((0, 0x1008ff12        ), spawn "amixer -q set Master mute")    --- can use 'xev' to see key events
-      , ((0, 0x1008ff11        ), spawn "amixer -q sset Master 2%- unmute")
-      , ((0, 0x1008ff13        ), spawn "amixer -q sset Master 2%+ unmute")
-      , ((0, 0x1008ff03        ), spawn "xbacklight -inc -10%")
-      , ((0, 0x1008ff02        ), spawn "xbacklight -inc +10%")
-      ]
-    where
-      smash x = (mod1Mask .|. mod4Mask .|. controlMask, x)
-      modMask = myModMask
-      modShift x = (modMask .|. shiftMask, x)
-      modCtrl x = (modMask .|. controlMask, x)
+    `additionalKeys`
+    -- screensaver
+    [ (modShift xK_z          , spawn myScreensaver)
+    -- normal screenshot
+    , ((0, xK_Print         ) , spawn myFullScreenShot)
+    , ((modMask, xK_p)        , spawn "dmenu_run")
+    -- select screenshot
+    , (modCtrl xK_Print       , spawn mySelectScreenShot)
+    , (modCtrl xK_g           , spawn myScreenGif)
+    , (modShift xK_n          , spawn "nm-connection-editor")
+    , (modCtrl  xK_Right      , nextWS)
+    , (modShift xK_Right      , shiftToNext)
+    , (smash xK_o             , spawn "pavucontrol")
+    , (modCtrl  xK_Left       , prevWS)
+    , (modShift xK_Left       , shiftToPrev)
+    , ((0, 0x1008ff12        ), spawn "amixer -q set Master mute")    --- can use 'xev' to see key events
+    , ((0, 0x1008ff11        ), spawn "amixer -q sset Master 2%- unmute")
+    , ((0, 0x1008ff13        ), spawn "amixer -q sset Master 2%+ unmute")
+    , ((0, 0x1008ff03        ), spawn "xbacklight -inc -10%")
+    , ((0, 0x1008ff02        ), spawn "xbacklight -inc +10%")
+    ]
+  where
+    smash x = (mod1Mask .|. mod4Mask .|. controlMask, x)
+    modMask = myModMask
+    modShift x = (modMask .|. shiftMask, x)
+    modCtrl x = (modMask .|. controlMask, x)
 
 ----------------
 -- constants ---
@@ -156,7 +183,7 @@ myModMask = mod4Mask -- mod1Maks = alt   |   mod4Mask == meta
 myTerminal = "gnome-terminal"
 myFocusedBorderColor = "#88bb77"
 myNormalBorderColor  = "#003300"
-myScreensaver = "gnome-screensaver-command --lock"-- "systemctl suspend" -- "xscreensaver-command -lock"
+myScreensaver = "gnome-screensaver-command --lock"
 mySelectScreenShot = "sleep 0.2; scrot -s -e 'mv $f ~/screenies'"
 myFullScreenShot = "scrot -e 'mv $f ~/screenies'"
 
